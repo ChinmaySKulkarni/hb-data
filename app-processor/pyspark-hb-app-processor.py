@@ -15,6 +15,16 @@ SPARK_APP_NAME = "PySpark HB Application Processor"
 SPARK_SESSION = None
 
 
+def find_top_n_locations(spark_session, url, n=20):
+    df = spark_session.read.parquet(url)
+    df.createOrReplaceTempView('T')
+    # Count on location_id so that we skip null ones which are probably not too useful anyways
+    spark_session.sql(
+        'SELECT LOCATION_ID, COUNT(LOCATION_ID) AS TOTAL_COUNT FROM T ' +
+        'GROUP BY LOCATION_ID ORDER BY TOTAL_COUNT DESC LIMIT ' + str(n))\
+        .show(n, False, False)  # pass in `n` in show as well, in case predicate pushdown of limit is not supported
+
+
 def parse_configs(conf_location):
     with open(conf_location, 'r') as conf_fd:
         return yaml.safe_load(conf_fd)
@@ -36,6 +46,8 @@ def main():
     # Make this global so we can interact with it in Jupyter
     global SPARK_SESSION
     SPARK_SESSION = get_or_generate_spark_session(SPARK_CONF_FILE_LOCATION, SPARK_MASTER_URL, SPARK_APP_NAME)
+    # task b)
+    find_top_n_locations(SPARK_SESSION, S3_URL, 20)
 
 
 if __name__ == "__main__":
