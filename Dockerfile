@@ -77,7 +77,7 @@ RUN wget https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk/1.10.6/aws-ja
 RUN wget https://repo1.maven.org/maven2/net/java/dev/jets3t/jets3t/0.9.4/jets3t-0.9.4.jar -P $SPARK_HOME/jars/
 
 RUN export PYSPARK_DRIVER_PYTHON='jupyter'
-RUN export PYSPARK_DRIVER_PYTHON_OPTS='notebook'
+RUN export PYSPARK_DRIVER_PYTHON_OPTS='notebook --NotebookApp.iopub_data_rate_limit=1.0e10'
 
 COPY ./app-processor $HOME/
 COPY ./requirements.txt $HOME/
