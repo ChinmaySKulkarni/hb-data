@@ -8,8 +8,11 @@ help: ## Get help.
 
 .DEFAULT_GOAL := help
 
-build: ## Build the image
+build: ## Run unit tests and build the image
 	docker build -t $(APP_NAME) .
+
+build-no-cache: ## Run unit tests and build the image without using the cache
+	docker build --no-cache -t $(APP_NAME) .
 
 run: ## Run container with ports exposed for Jupyter Notebook
 	docker run -i -t --rm -p=$(PORT):$(PORT) --name="$(APP_NAME)" $(APP_NAME)

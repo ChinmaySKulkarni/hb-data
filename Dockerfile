@@ -58,9 +58,15 @@ RUN ln -s "spark-${APACHE_SPARK_VERSION}-bin-without-hadoop" spark && \
 
 # Fix Spark installation for Java 11 and Apache Arrow library
 # see: https://github.com/apache/spark/pull/27356, https://spark.apache.org/docs/latest/#downloading
+# Override default Spark configs for improved performance
 RUN cp -p "${SPARK_HOME}/conf/spark-defaults.conf.template" "${SPARK_HOME}/conf/spark-defaults.conf" && \
     echo 'spark.driver.extraJavaOptions -Dio.netty.tryReflectionSetAccessible=true' >> "${SPARK_HOME}/conf/spark-defaults.conf" && \
-    echo 'spark.executor.extraJavaOptions -Dio.netty.tryReflectionSetAccessible=true' >> "${SPARK_HOME}/conf/spark-defaults.conf"
+    echo 'spark.driver.memory 5g' >> "${SPARK_HOME}/conf/spark-defaults.conf" && \
+    echo 'spark.executor.extraJavaOptions -Dio.netty.tryReflectionSetAccessible=true' >> "${SPARK_HOME}/conf/spark-defaults.conf" && \
+    echo 'spark.executor.instances 8' >> "${SPARK_HOME}/conf/spark-defaults.conf" && \
+    echo 'spark.executor.memory 2g' >> "${SPARK_HOME}/conf/spark-defaults.conf" && \
+    echo 'spark.sql.adaptive.enabled true' >> "${SPARK_HOME}/conf/spark-defaults.conf"
+
 
 USER ${NB_UID}
 WORKDIR "${HOME}"
@@ -79,10 +85,18 @@ RUN wget https://repo1.maven.org/maven2/net/java/dev/jets3t/jets3t/0.9.4/jets3t-
 RUN export PYSPARK_DRIVER_PYTHON='jupyter'
 RUN export PYSPARK_DRIVER_PYTHON_OPTS='notebook --NotebookApp.iopub_data_rate_limit=1.0e10'
 
-COPY ./app-processor $HOME/
+COPY ./app_processor $HOME/app_processor
+COPY ./tests/test_pyspark_hb_app_processor.py $HOME/
+COPY ./tests/test-conf.yml $HOME/
 COPY ./requirements.txt $HOME/
-ADD ./app-processor/conf $HOME/conf
-# install requirements and convert the main py file to ipynb
+# install requirements, run unit tests and convert the main py file to ipynb
 RUN pip install -r requirements.txt && \
-    jupytext --to notebook pyspark-hb-app-processor.py && \
-    rm *.py requirements.txt
+    export PYTHONPATH=$PYTHONPATH:$HOME/app_processor/ && \
+    echo "******* Finished installing requirements *******" && \
+    python test_pyspark_hb_app_processor.py && \
+    echo "******* Finished running unit tests *******" && \
+    jupytext --to notebook app_processor/pyspark_hb_app_processor.py && \
+    echo "******* Finished converting Py app to iPynb *******" && \
+    mv app_processor/* $HOME && chmod 777 expectations/ && \
+    rm -rf work app_processor *.py test-conf.yml requirements.txt && \
+    echo "******* Finished cleaning up unnecessary files *******"
