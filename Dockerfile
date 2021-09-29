@@ -97,6 +97,6 @@ RUN pip install -r requirements.txt && \
     echo "******* Finished running unit tests *******" && \
     jupytext --to notebook app_processor/pyspark_hb_app_processor.py && \
     echo "******* Finished converting Py app to iPynb *******" && \
-    mv app_processor/* $HOME && chmod 777 expectations/ && \
+    mv app_processor/* $HOME && chmod 777 expectations/ && chmod 777 expectations/* && \
     rm -rf work app_processor *.py test-conf.yml requirements.txt && \
     echo "******* Finished cleaning up unnecessary files *******"

@@ -4,7 +4,7 @@ from unittest.mock import Mock
 from app_processor.pyspark_hb_app_processor import parse_configs, get_or_generate_spark_session
 
 
-class MyTestCase(unittest.TestCase):
+class TestAppProcessor(unittest.TestCase):
 
     def test_parse_configs(self):
         conf = parse_configs("test-conf.yml")
